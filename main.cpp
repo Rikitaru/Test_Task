@@ -13,111 +13,131 @@
 #define number_implementers_MIN 1
 #define number_details_MAX 10
 #define number_details_MIN 1
-#define IMPLEMENTER_CHANCE_ERROR 0
-#define IMPLEMENTER_CHANCE_NOANSWER 0
+#define IMPLEMENTER_CHANCE_ERROR 5
+#define IMPLEMENTER_CHANCE_NO_ANSWER 5
 #include <iostream>
 #include <random>
-//заметить обычные for на что-то покрасивше, через define или range
+#include <exception>
+#include <stdexcept>
+#include <iomanip>
+
 enum states{
-    wait,       //0
-    success,    //1
-    error = -1,  //-1
-    no_answer = -2
+    wait,           //0
+    success,        //1
+    error = -1,     //-1
+    no_answer = -2  //-2
 };
-using namespace std;
 class Conveyor {
 private:
-    class Implementer{
+    class Implementer {
     private:
         int state;
         bool busy;
     public:
         Implementer() {
-            state= states(wait);
+            state = states(wait);
             busy = false;
         }
+
+        int get_state() const {
+            return state;
+        }
+
+        void set_busy(bool input_busy) {
+            busy = input_busy;
+        }
+
+        void show() {
+            std::cout << std::setw(2) << technological_operation() << " ";
+        }
+
         int technological_operation() {
             if (busy) {
                 std::random_device rd;
                 std::mt19937 mersenne(rd()); // инициализируем Вихрь Мерсенна случайным стартовым числом
-                state = ((mersenne() % 100 + 1) <= IMPLEMENTER_CHANCE_NOANSWER) ? states(no_answer) : states(wait);
-                if (!(state == states(no_answer))) {
+                state = ((mersenne() % 100 + 1) <= IMPLEMENTER_CHANCE_NO_ANSWER) ? states(no_answer) : states(wait);
+                if (state != states(no_answer)) {
                     state = ((mersenne() % 100 + 1) <= IMPLEMENTER_CHANCE_ERROR) ? states(error) : states(success);
                 }
-            }
-            else{
+            } else {
                 state = states(wait);
             }
             return state;
         }
-        void show() {
-                std::cout<<technological_operation()<<" ";
-        }
-        void set_busy(bool input_busy) {
-            busy=input_busy;
-        }
-        int get_state() const {
-            return state;
-        }
+
+        ~Implementer() = default;
     };
-    Implementer* ptr = nullptr;
-    int number_implementers;
-    int number_details;
-    int step;
+    uint16_t number_implementers;
+    uint16_t number_details;
+    uint16_t step;
+    std::unique_ptr<Implementer[]> ptr = nullptr;
 public:
-    Conveyor():number_implementers(1), number_details(10), step(0) {
+    Conveyor() : number_implementers(1), number_details(10), step(0) {
         while (true) {
-            std::cout << "Введите количество исполнительных механизмов (участков) в конвейре: " << std::endl;
+            std::cout << "Enter the number_implementers (sections) in the pipeline(Conveyor): " << std::endl;
             if (std::cin >> number_implementers) {
                 if ((number_implementers >= number_implementers_MIN) &&
                     (number_implementers <= number_implementers_MAX)) {
                     break;
                 } else {
                     std::cout
-                            << "Неккоректный ввод, количество исполнительных механизмов (участков) конвейра должно быть в диапазоне: ["
+                            << "Incorrect input, the number_implementers must be in the range: ["
                             << number_implementers_MIN << "," << number_implementers_MAX << "]" << std::endl;
                 }
-            }
-            else{
+            } else {
                 std::cin.clear();
                 std::cin.ignore(32767, '\n');
                 std::cout
-                        << "Неккоректный ввод, количество исполнительных механизмов (участков) конвейра должно быть в диапазоне: ["
+                        << "Incorrect input, the number_implementers must be in the range: ["
                         << number_implementers_MIN << "," << number_implementers_MAX << "]" << std::endl;
             }
         }
         while (true) {
-            std::cout << "Введите количество деталей для обработки: " << std::endl;
+            std::cout << "Enter the number_details to process: " << std::endl;
             if (std::cin >> number_details) {
                 if ((number_details >= number_details_MIN) &&
                     (number_details <= number_details_MAX)) {
                     break;
                 } else {
                     std::cout
-                            << "Неккоректный ввод, количество деталей для обработки должно быть в диапазоне: ["
+                            << "Incorrect input, the number_details must be in the range: ["
                             << number_details_MIN << "," << number_details_MAX << "]" << std::endl;
                 }
-            }
-            else{
+            } else {
                 std::cin.clear();
                 std::cin.ignore(32767, '\n');
                 std::cout
-                        << "Неккоректный ввод, количество исполнительных механизмов (участков) конвейра должно быть в диапазоне: ["
+                        << "Incorrect input, the number_details must be in the range: ["
                         << number_details_MIN << "," << number_details_MAX << "]" << std::endl;
             }
         }
-        ptr = new Implementer[number_implementers];
+        ptr = std::unique_ptr<Implementer[]>{new Implementer[number_implementers]};
         show();
     }
-    Conveyor(int input_number_implementers, int input_number_details):number_implementers(input_number_implementers), number_details(input_number_details), step(0) {
-        ptr = new Implementer[number_implementers];
+
+    Conveyor(int16_t const input_number_implementers, int16_t const input_number_details) : number_implementers(
+            input_number_implementers), number_details(input_number_details), step(0) {
+        if (input_number_implementers <= 0 ) {
+            throw std::logic_error("Error. The input_number_implementers must be positive");
+        }
+        if (input_number_details <= 0 ) {
+            throw std::logic_error("Error. The input_number_details must be positive");
+        }
+        ptr = std::unique_ptr<Implementer[]>{new Implementer[number_implementers]};
         show();
     }
-    void process(int temp) {
+
+    void process(int16_t const input_amount_steps) {
+        if (input_amount_steps <= 0 ) {
+            throw std::logic_error("Error. The input_amount_steps must be positive");
+        }
+        if (ptr == nullptr) {
+            throw std::logic_error("Error. Null ptr");
+        }
         do {
-            int S=0;
-            cout << step << ": ";
-            for (int i = 0; i < number_implementers; i++) {
+            uint16_t S = 0;
+            std::cout << std::setw(2) << step << ": ";
+            for (uint16_t i = 0; i < number_implementers; i++) {
                 if (step <= number_details) {
                     if (i < (step % (number_details + 1))) {
                         ptr[i].set_busy(true);
@@ -130,64 +150,76 @@ public:
                     }
                 }
                 ptr[i].show();
-                if((ptr[i].get_state() != states(error))&&(ptr[i].get_state() != states(no_answer))) {
+                if ((ptr[i].get_state() != states(error)) && (ptr[i].get_state() != states(no_answer))) {
                     S++;
                 }
             }
-            cout <<" S = " << S << endl;
-            if (S!=number_implementers) {
-                if (!crash()){
+            std::cout << " S = " << S << std::endl;
+            if (S != number_implementers) {
+                if (!crash()) {
                     return;
-                } else{
+                } else {
                     repair();
                 }
             }
             step++;
-        } while (step!=temp);
+        } while (step != input_amount_steps);
     }
-    void show() const{
-        cout<<"Количество ИП = "<<number_implementers <<endl;
-        cout<<"Количество Деталей = "<<number_details <<endl;
+
+    void show() const {
+        std::cout << "Number of implementers = " << number_implementers << std::endl;
+        std::cout << "Number of details = " << number_details << std::endl;
     }
-    void repair() const{
-        cout<<"ИП был починен. Над деталью уже выполнили действие" <<endl;
+
+    void static repair() {
+        std::cout << "Implementer as been fixed. An action has already been performed on the part." << std::endl;
     }
-    int crash(){
-        int answer = 0;
-        cout<<"There was an accident. Hardware error. In step "<<get_step() <<endl;
+
+    uint16_t crash() const {
+        uint16_t answer = 0;
+        std::cout << "There was an accident. Hardware error. In step " << get_step() << std::endl;
         while (true) {
-            cout << "Continue automatic operation? (1 - Yes, 0 - No) "<<endl;
+            std::cout << "Continue automatic operation? (1 - Yes, 0 - No) " << std::endl;
             if (std::cin >> answer) {
                 if ((answer >= 0) &&
                     (answer <= 1)) {
                     break;
                 } else {
-                    std::cout << "Неккоректный ввод, введите число 1 - Yes, 0 - No"<< std::endl;
+                    std::cout << "Incorrect input, enter the number 1 - Yes, 0 - No" << std::endl;
                 }
-            }
-            else{
+            } else {
                 std::cin.clear();
                 std::cin.ignore(32767, '\n');
-                std::cout << "Неккоректный ввод, введите число 1 - Yes, 0 - No"<< std::endl;
-            }d
+                std::cout << "Incorrect input, enter the number 1 - Yes, 0 - No" << std::endl;
+            }
         }
         return answer;
     }
-    int get_step() const{
+
+    uint16_t get_step() const {
         return step;
     }
+
     ~Conveyor() {
         std::cout << "work of the destructor" << std::endl;
-        delete [] ptr;
     }
 };
 
-int main(){
+int main() {
     system("chcp 65001");
-    int amount_steps = 0;
-	Conveyor a(10,10);
-    std::cout << "Сколько шагов должен выполнить конвейер?" << std::endl;
-    cin >> amount_steps;
-	//a.process(amount_steps);
-	return 0;
+    int16_t amount_steps = 0;
+    std::cout << "How many steps should the pipeline perform?" << std::endl;
+    std::cin >> amount_steps;
+    try {
+        //Conveyor a(10, 4);
+        Conveyor a;
+        a.process(amount_steps);
+    }
+    catch (std::exception const &e) {
+        std::cerr << e.what() << '\n';
+    }
+    catch (...) {
+        std::cout << "Unknown error" << '\n';
+    }
+    return 0;
 }
