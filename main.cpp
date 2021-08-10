@@ -9,30 +9,30 @@
 работы возможен только по команде оператора.
 После сдвига ленты, ИМ по команде управляющей программы выполняет одну технологическую
 операцию над деталью.После того как все ИМ успешно отработали операцию, технологический цикл повторяется.*/
-#define number_implementers_MAX 10
-#define number_implementers_MIN 1
-#define number_details_MAX 10
-#define number_details_MIN 1
-#define IMPLEMENTER_CHANCE_ERROR 5
-#define IMPLEMENTER_CHANCE_NO_ANSWER 5
+#define number_implementers_MAX 10      //максимальное количество ИМ в конвейере
+#define number_implementers_MIN 1       //минимальное  количество ИМ в конвейере
+#define number_details_MAX 10           //максимальное количество Деталей в конвейере
+#define number_details_MIN 1            //минимальное  количество Деталей в конвейере
+#define IMPLEMENTER_CHANCE_ERROR 2      //вероятность ошибки ИМ при работе с деталью (в процентах)
+#define IMPLEMENTER_CHANCE_NO_ANSWER 2  //вероятность проблемы "не отвечает в течение заданного времени" (в процентах)
 #include <iostream>
 #include <random>
 #include <exception>
 #include <stdexcept>
 #include <iomanip>
 
-enum states{
-    wait,           //0
-    success,        //1
-    error = -1,     //-1
-    no_answer = -2  //-2
+enum states{                //состояния для ИМ
+    wait,                   //0  ИМ ожидает деталь
+    success,                //1  ИМ успешно отработал с деталью
+    error = -1,             //-1 ИМ получил ошибку, работая с деталью
+    no_answer = -2          //-2 ИП получил проблему "не отвечает в течение заданного времени", работая с деталью
 };
 class Conveyor {
 private:
     class Implementer {
     private:
-        int state;
-        bool busy;
+        int state; //состояние ИМ
+        bool busy; //показатель "работает ли на текущем шагу (цикле конвейера) данный ИМ"
     public:
         Implementer() {
             state = states(wait);
@@ -67,12 +67,12 @@ private:
 
         ~Implementer() = default;
     };
-    uint16_t number_implementers;
-    uint16_t number_details;
-    uint16_t step;
-    std::unique_ptr<Implementer[]> ptr = nullptr;
+    uint16_t number_implementers;   //количество ИМ в конвейере
+    uint16_t number_details;        //количество Деталей в конвейере
+    uint16_t step;                  //Номер Шага (цикла) конвейера
+    std::unique_ptr<Implementer[]> ptr = nullptr;   //unique_ptr указатель для безопасной работы конструктора Conveyor(int16_t const input_number_imp...) с throw
 public:
-    Conveyor() : number_implementers(1), number_details(10), step(0) {
+    Conveyor() : number_implementers(1), number_details(10), step(0) { //конструктор для ввода с клавиатуры
         while (true) {
             std::cout << "Enter the number_implementers (sections) in the pipeline(Conveyor): " << std::endl;
             if (std::cin >> number_implementers) {
@@ -116,7 +116,7 @@ public:
     }
 
     Conveyor(int16_t const input_number_implementers, int16_t const input_number_details) : number_implementers(
-            input_number_implementers), number_details(input_number_details), step(0) {
+            input_number_implementers), number_details(input_number_details), step(0) { //конструктор с параметрами и исключениями
         if (input_number_implementers <= 0 ) {
             throw std::logic_error("Error. The input_number_implementers must be positive");
         }
@@ -127,7 +127,7 @@ public:
         show();
     }
 
-    void process(int16_t const input_amount_steps) {
+    void process(int16_t const input_amount_steps) { //процесс конвейера
         if (input_amount_steps <= 0 ) {
             throw std::logic_error("Error. The input_amount_steps must be positive");
         }
@@ -137,7 +137,7 @@ public:
         do {
             uint16_t S = 0;
             std::cout << std::setw(2) << step << ": ";
-            for (uint16_t i = 0; i < number_implementers; i++) {
+            for (uint16_t i = 0; i < number_implementers; i++) { //в зависимости от номера Шага конвейера определяется занятость каждого ИМ
                 if (step <= number_details) {
                     if (i < (step % (number_details + 1))) {
                         ptr[i].set_busy(true);
@@ -155,14 +155,18 @@ public:
                 }
             }
             std::cout << " S = " << S << std::endl;
-            if (S != number_implementers) {
-                if (!crash()) {
+            if (S != number_implementers) { //проверка на то, что все конвейеры отработали штатно
+                if (!crash()) { //вызов оператора
+                    std::cout << " pipeline stop" << std::endl;
                     return;
                 } else {
-                    repair();
+                    repair(); //вызов ремонта
                 }
             }
             step++;
+            if ((step == input_amount_steps)&&(step!=1)&&(S==number_implementers)){
+                std::cout << " The pipeline has completed all the work" << std::endl;
+            }
         } while (step != input_amount_steps);
     }
 
@@ -211,8 +215,8 @@ int main() {
     std::cout << "How many steps should the pipeline perform?" << std::endl;
     std::cin >> amount_steps;
     try {
-        //Conveyor a(10, 4);
-        Conveyor a;
+        //Conveyor a(10, 4); //Конструктор с параметрами и throw
+        Conveyor a;         //Конструктор с пользовательским вводом
         a.process(amount_steps);
     }
     catch (std::exception const &e) {
