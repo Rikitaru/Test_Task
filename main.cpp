@@ -9,10 +9,10 @@
 работы возможен только по команде оператора.
 После сдвига ленты, ИМ по команде управляющей программы выполняет одну технологическую
 операцию над деталью.После того как все ИМ успешно отработали операцию, технологический цикл повторяется.*/
-#define IMPLEMENTER_CHANCE_ERROR 2      // вероятность ошибки ИМ при работе с деталью (в процентах)
-#define IMPLEMENTER_NUMBER_OF_REPAIR_TRYING 2
-#define IMPLEMENTER_ACCEPTEBLE_DELAY 0.8
-#define IMPLEMENTER_MAX_DELAY 1000
+#define IMPLEMENTER_CHANCE_ERROR 2              // вероятность ошибки ИМ при работе с деталью (в процентах)
+#define IMPLEMENTER_NUMBER_OF_REPAIR_TRYING 2   // количество попыток починки ИМ
+#define IMPLEMENTER_ACCEPTEBLE_DELAY 0.8        // допустимый отклик от ИМ (в секундах)
+#define IMPLEMENTER_MAX_DELAY 1000              // максимально возможный отклик
 #include <iostream>
 #include <random>
 #include <exception>
@@ -120,9 +120,9 @@ private:
         };
     };
 
-    uint16_t number_implementers;   // количество ИМ в конвейере
-    uint16_t number_details;        // количество Деталей в конвейере
-    uint16_t step;                  // Номер Шага (цикла) конвейера
+    uint16_t number_implementers;           // количество ИМ в конвейере
+    uint16_t number_details;                // количество Деталей в конвейере
+    uint16_t step;                          // Номер Шага (цикла) конвейера
     Detail *ptr_Detail = nullptr;           // std::unique_ptr<Detail[]> ptr_Detail;
     Implementer *ptr_Implementer = nullptr; // std::unique_ptr<Implementer[]> ptr_Implementer;
 public:
